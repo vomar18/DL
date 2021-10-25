@@ -181,7 +181,7 @@ def LSRegression(X, y):
 
     # Projection matrix
     W = np.linalg.inv(X_aug.T.dot(X_aug)).dot(X_aug.T).dot(y)
-    # print("Projection matrix:", W, "\n")
+    print("Projection matrix:", W, "\n")
 
     return W
 
