@@ -19,17 +19,32 @@
 #
 
 """
+
+from sklearn.datasets import load_boston # ti serve un dataset
+import pandas as pd # utilizzi la funzione pd.DataFrame per creare una tabella organizzata dei dati del dataset
+import seaborn as sns # seaborn: statistical data visualization --> ti crea istogrammi (vedi loro risultato)
+import matplotlib.pyplot as plt # crea un'immagine con più grafici(scatter) per vedere dopo puoi applicare linear regression
+# APPLICHI LINEAR REGRESSION QUANDO:
+# 1. hai un grafico lineare
+# 2. i dati sono homoskedastic --> varianza fissa e limitata --> hai un limite nella distribuzione dei dati
+# 3. gli errori di scarto (residual) sono indipendenti tra loro (questo caso non analizzato!)
+# 4. l'errore residuo è distribuito come una pdf normale (questo caso non analizzato!)
+# NON APPLICHI LINEAR REGRESSION:
+# 1. l'andamento dei dati è non lineare
+# 2. l'errore dei residui tende a + inf --> non limitato
+# 3. dati non continui hai un distacco
+
 import time
 from typing import Any, Dict, Tuple
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns # seaborn: statistical data visualization
-import pandas as pd
+
+
+
 
 from scipy import stats
 from sklearn.linear_model import LinearRegression, SGDRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn.datasets import load_boston
+
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 
@@ -221,7 +236,7 @@ def perform_lr_ls(X, Y):
     # plt.plot([0, 50], [0, 50], '--k')
     plt.axis("tight")
     plt.grid()
-    plt.title("LS solution")
+    plt.title("your LS solution")
     plt.xlabel("True price ($1000s)")
     plt.ylabel("Predicted price ($1000s)")
     plt.tight_layout()
@@ -301,7 +316,7 @@ def perform_lr_gd(X, Y, iters: int = 10000, alpha: float = 0.005):
     print(X.shape)
     theta = MyGDregression(X, Y, iters, alpha)
     Y_pred_GD = np.dot(theta[0:-1], X.T) + theta[-1] # di theta prendi solo gli N-1 valori!!
-    loss_sgd = mean_squared_error(Y, Y_pred_GD)
+    loss_sgd = mean_squared_error(Y, Y_pred_GD)      # l'ultimo è il bias
     print("Model performance GD:")
     print("MSE is {}".format(loss_sgd))
 
@@ -310,7 +325,7 @@ def perform_lr_gd(X, Y, iters: int = 10000, alpha: float = 0.005):
     # plt.plot([0, 50], [0, 50], '--k')
     plt.axis("tight")
     plt.grid()
-    plt.title("GD")
+    plt.title("your GD(my GDregression + update f)")
     plt.xlabel("True price ($1000s)")
     plt.ylabel("Predicted price ($1000s)")
     plt.tight_layout()
