@@ -33,20 +33,16 @@ import matplotlib.pyplot as plt # crea un'immagine con più grafici(scatter) per
 # 1. l'andamento dei dati è non lineare
 # 2. l'errore dei residui tende a + inf --> non limitato
 # 3. dati non continui hai un distacco
-
-import time
-from typing import Any, Dict, Tuple
-import numpy as np
-
-
-
-
-from scipy import stats
+import numpy as np # utilizzi matmul (matrix mult vera) e block ad esempio (espandi a dx vettore)
+# confronto con libreria sklearn
 from sklearn.linear_model import LinearRegression, SGDRegressor
 from sklearn.metrics import mean_squared_error
-
 from sklearn.metrics import r2_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler # utile per sclare i dati così tutte features hanno peso uguale
+
+import time # utile per capire dopo durata di velocità nel calcolo
+from typing import Any, Dict, Tuple
+from scipy import stats # utile per analisi dei residual con metoro stats.probplot
 
 # Global parameters
 visualize = True # only for visualize the graphs
@@ -283,8 +279,8 @@ def gradfn(theta, X, Y):
     Return gradient of each weight evaluated at the current value
     """
     N, D = np.shape(X)
-    Y_pred = np.matmul(X, theta)
-    error = Y_pred - Y # ATT DEVE necessariamente essere così!
+    Y_pred = np.matmul(X, theta) # X (506 x 2) theta deve essere 2x1 ris Y_pred = 506x1
+    error = Y_pred - Y # ATT DEVE necessariamente essere così!!! sempre 506 x 1
     #print("errore:", np.mean(error))
     return np.matmul(X.T,error) / float(N)
 
@@ -382,9 +378,9 @@ print("R2 score(GD)", r2_score(Y, Y_pred))
 
 # la tua implementazione del GD è giusta se e solo se gli errori sono uguali
 # Standardizing data
-scaler = StandardScaler()
-scaler.fit(X)
-X = scaler.transform(X)
+scaler = StandardScaler() # crei l'ogg
+scaler.fit(X) # gli dai in pasto i dati
+X = scaler.transform(X) # ti salvi la trasformazione dei dati scalati
 
 # Data normalized
 W_norm, Y_pred_norm = perform_lr_ls(X, Y)
@@ -405,4 +401,92 @@ print("!! I theta trovati prima (dove ultimo dato è bias) devono essere "
 
 # ----------------------- LS vs GD -----------------------
 
-# TODO check time of duration between LS and GDN
+# What if using an high number of features?
+X = boston_pd[boston_raw.feature_names] # in questo caso prendi tutte le features a disposizione
+# non viene controllato o meno se in ogni feature è possibile applicare o meno linear regressor....bha...
+
+# Standardizing data
+scaler = StandardScaler()
+scaler.fit(X)
+X = scaler.transform(X)
+
+print(f"Linear Regression on data: {X.shape}")
+
+start = time.time()
+W = LSRegression(X, Y)
+print(f"durata applico mia LS regressor: {time.time() - start:.6f} seconds")
+
+n_iter = 100
+start = time.time()
+clf_ = SGDRegressor(max_iter=n_iter)
+clf_.fit(X, Y)
+print(f"durata applico mio GD regressor: {time.time() - start:.6f} seconds")
+
+# Ok maybe 13 features are still too few? Let's try something a little bigger, maybe 2000 features?
+from sklearn.datasets import make_regression
+
+X, Y = make_regression(n_samples=10000, n_features=2000)
+
+# Standardizing data
+scaler = StandardScaler()
+scaler.fit(X)
+X = scaler.transform(X)
+
+print(f"Linear Regression on super data: {X.shape}")
+
+start = time.time()
+W = LSRegression(X, Y)
+print(f"Elapsed: {time.time() - start:.6f} seconds")
+
+n_iter = 100
+start = time.time()
+clf_ = SGDRegressor(max_iter=n_iter)
+clf_.fit(X, Y)
+print(f"Elapsed: {time.time() - start:.6f} seconds")
+
+timings_ls = []
+timings_gd = []
+feature_sizes = []
+n_iter = 50
+plt.figure(figsize=(10, 8))
+
+for n_feat in range(100, 2000, 100):
+    # n_samples = n_feat * 5
+    n_samples = 10000
+    n_features = n_feat
+    X, Y = make_regression(n_samples=n_samples, n_features=n_features)
+
+    feature_sizes.append(f"(S: {n_samples}, F: {n_features})")
+
+    # Standardizing data
+    scaler = StandardScaler()
+    scaler.fit(X)
+    X = scaler.transform(X)
+
+    print(f"Linear Regression on data: {X.shape}")
+
+    start = time.time()
+    W = LSRegression(X, Y)
+    timings_ls.append(time.time() - start)
+
+    clf_ = SGDRegressor(max_iter=n_iter)
+    start = time.time()
+    clf_.fit(X, Y)
+    timings_gd.append(time.time() - start)
+
+    plt.clf()
+    x_axis = np.arange(len(timings_ls))
+    plt.plot(x_axis, timings_ls, label="LS")
+    plt.plot(x_axis, timings_gd, label="GD")
+    plt.xticks(x_axis, feature_sizes, rotation=45)
+    # Pad margins so that markers don't get clipped by the axes
+    # plt.margins(0.2)
+    # Tweak spacing to prevent clipping of tick-labels
+    plt.subplots_adjust(bottom=0.20)
+
+    plt.ylabel("Execution time (s)")
+    plt.xlabel("Runs")
+    plt.grid()
+    plt.legend()
+    plt.draw()
+    plt.pause(0.05)
